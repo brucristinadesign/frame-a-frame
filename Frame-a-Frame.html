@@ -1,0 +1,355 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Frame a Frame</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: mesa de luz — painel de ajustes à esquerda, folha de contato (contact sheet) dos frames à direita */
+:root{
+  --bg:#eceef1; --surface:#f8f9fa; --ink:#15181c; --muted:#5d6570; --line:#d3d7dd;
+  --mark:#c4342b; --mark-ink:#ffffff; --film:#1b1e22; --film-hole:#eceef1;
+  --f-display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111316; --surface:#1a1d21; --ink:#e9ecef; --muted:#98a0aa; --line:#2c3138;
+  --mark:#ef5b4f; --mark-ink:#111316; --film:#060708; --film-hole:#2a2e34; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111316; --surface:#1a1d21; --ink:#e9ecef; --muted:#98a0aa; --line:#2c3138;
+  --mark:#ef5b4f; --mark-ink:#111316; --film:#060708; --film-hole:#2a2e34; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:24px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;margin:0;line-height:1.05;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:52ch}
+
+.main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:20px}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:22px 14px;text-align:center;cursor:pointer;display:grid;gap:6px;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--mark);background:color-mix(in srgb,var(--mark) 6%,transparent)}
+.drop strong{font-family:var(--f-display);font-size:18px}
+.drop span{color:var(--muted);font-size:13px}
+.drop:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+.meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:grid;gap:2px;font-variant-numeric:tabular-nums;word-break:break-all}
+.meta b{color:var(--ink);font-weight:500}
+
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 13px var(--f-body);padding:8px 4px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.two{grid-template-columns:repeat(2,1fr)}
+.row{display:flex;align-items:center;gap:10px}
+.row input[type=number]{width:90px}
+input[type=number]{font:500 15px var(--f-mono);padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--mark)}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.q{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:13px}
+
+.btn{font:600 14px var(--f-body);padding:11px 14px;border-radius:7px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer;width:100%}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.red{background:var(--mark);border-color:var(--mark);color:var(--mark-ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.stack{display:grid;gap:8px}
+
+/* palco */
+.stage{display:grid;gap:16px;min-width:0}
+.viewer{background:var(--film);border-radius:10px;overflow:hidden;display:grid;place-items:center;aspect-ratio:16/9;max-width:100%;position:relative}
+.viewer video{width:100%;height:100%;object-fit:contain;display:block}
+.viewer .empty{color:#9aa2ab;font-family:var(--f-mono);font-size:13px;text-align:center;padding:20px}
+.scrub{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.scrub input[type=range]{flex:1;min-width:160px}
+.tc{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.scrub .btn{width:auto}
+
+.progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--mark);transition:width .15s}
+.status{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);min-height:1.5em}
+
+/* folha de contato */
+.sheet-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.sheet-head h2{font-family:var(--f-display);font-size:20px;margin:0}
+.sheet-head .tools{display:flex;gap:8px;flex-wrap:wrap}
+.sheet-head .tools button{font:500 13px var(--f-body);background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer}
+.strip{background:var(--film);border-radius:6px;padding:18px 12px;position:relative;
+  background-image:radial-gradient(circle at center,var(--film-hole) 3px,transparent 3.5px),radial-gradient(circle at center,var(--film-hole) 3px,transparent 3.5px);
+  background-size:16px 18px,16px 18px;background-position:4px -2px,4px calc(100% + 2px);background-repeat:repeat-x}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.frame{position:relative;border:0;padding:0;background:#000;cursor:pointer;border-radius:3px;overflow:hidden;outline:2px solid transparent;outline-offset:2px}
+.frame img{display:block;width:100%;aspect-ratio:var(--ar,16/9);object-fit:contain;background:#000}
+.frame .t{position:absolute;left:4px;bottom:4px;font:500 10.5px var(--f-mono);color:#fff;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:2px;font-variant-numeric:tabular-nums}
+.frame .n{position:absolute;right:4px;top:4px;font:500 10.5px var(--f-mono);color:#fff;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:2px}
+.frame[aria-pressed="true"]{outline-color:var(--mark)}
+.frame[aria-pressed="true"]::after{content:"✓";position:absolute;left:4px;top:4px;width:20px;height:20px;border-radius:50%;background:var(--mark);color:var(--mark-ink);font:700 12px/20px var(--f-body);text-align:center}
+.sheet-empty{color:#9aa2ab;font-family:var(--f-mono);font-size:13px;text-align:center;padding:36px 12px}
+.foot{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Frame a Frame</h1>
+    <p>Mande o vídeo, escolha de quanto em quanto tempo quer os frames e baixe tudo em JPG na resolução original. Nada sai do seu navegador.</p>
+  </header>
+
+  <div class="main">
+    <aside class="panel">
+      <div>
+        <p class="label">1 · Vídeo</p>
+        <label class="drop" id="drop" tabindex="0">
+          <strong>Solte o vídeo aqui</strong>
+          <span>ou clique para escolher · MP4, MOV, WEBM</span>
+          <input type="file" id="file" accept="video/*" hidden>
+        </label>
+        <div class="meta" id="meta" hidden></div>
+      </div>
+
+      <div>
+        <p class="label">2 · Como tirar os frames</p>
+        <div class="seg" id="mode">
+          <button type="button" data-v="interval" aria-pressed="true">A cada X s</button>
+          <button type="button" data-v="count" aria-pressed="false">Total</button>
+          <button type="button" data-v="all" aria-pressed="false">Todos</button>
+        </div>
+        <div class="row" style="margin-top:10px" id="valRow">
+          <input type="number" id="val" min="0.04" step="0.1" value="1">
+          <span id="valUnit">segundos</span>
+        </div>
+        <p class="hint" id="modeHint">Um frame a cada 1 segundo.</p>
+      </div>
+
+      <div>
+        <p class="label">3 · Formato e qualidade</p>
+        <div class="seg two" id="fmt">
+          <button type="button" data-v="jpg" aria-pressed="true">JPG</button>
+          <button type="button" data-v="png" aria-pressed="false">PNG (sem perda)</button>
+        </div>
+        <div id="qBox" style="margin-top:12px">
+          <div class="q"><span>Qualidade JPG</span><b id="qOut">100%</b></div>
+          <input type="range" id="q" min="70" max="100" value="100">
+          <p class="hint">100% = máxima qualidade. A resolução é sempre a original do vídeo.</p>
+        </div>
+      </div>
+
+      <div class="stack">
+        <button class="btn" id="go" disabled>Extrair frames</button>
+        <button class="btn ghost" id="stop" hidden>Parar</button>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="viewer" id="viewer">
+        <video id="vid" playsinline muted preload="auto" hidden></video>
+        <div class="empty" id="viewerEmpty">nenhum vídeo carregado<br>a prévia aparece aqui</div>
+      </div>
+      <div class="scrub">
+        <input type="range" id="seek" min="0" max="1000" value="0" disabled aria-label="Posição no vídeo">
+        <span class="tc" id="tc">00:00:00.000</span>
+        <button class="btn ghost" id="grab" disabled>+ Capturar este frame</button>
+      </div>
+      <div>
+        <div class="progress"><i id="bar"></i></div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="sheet-head">
+        <h2>Folha de contato <span class="tc" id="count"></span></h2>
+        <div class="tools">
+          <button type="button" id="selAll">Selecionar todos</button>
+          <button type="button" id="selNone">Limpar seleção</button>
+          <button type="button" id="clear">Apagar frames</button>
+        </div>
+      </div>
+      <div class="strip"><div class="grid" id="grid"></div><div class="sheet-empty" id="sheetEmpty">Os frames extraídos aparecem aqui. Clique num frame para marcar.</div></div>
+
+      <div class="stack" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+        <button class="btn red" id="zipSel" disabled>Baixar selecionados (.zip)</button>
+        <button class="btn" id="zipAll" disabled>Baixar todos (.zip)</button>
+      </div>
+      <p class="foot" id="dlNote">Dica: dê dois cliques num frame para baixar só ele.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const vid=$('vid'), grid=$('grid');
+let file=null, baseName='video', frames=[], mode='interval', fmt='jpg', busy=false, cancel=false, fpsGuess=30;
+let downloadsP=null;
+const localSaver={save:async({filename,data})=>{const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);return {status:'saved'}}};
+function dl(){ if(!downloadsP) downloadsP=window.claude?.use?window.claude.use('downloads').catch(()=>null):Promise.resolve(localSaver); return downloadsP; }
+
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+function tc(t){const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=Math.floor(t%60),ms=Math.round((t%1)*1000)%1000;return `${pad(h)}:${pad(m)}:${pad(s)}.${pad(ms,3)}`}
+function tcFile(t){return tc(t).replace(/[:.]/g,'-')}
+function status(msg){$('status').textContent=msg}
+
+/* ---------- carregar vídeo ---------- */
+function load(f){
+  if(!f||!f.type.startsWith('video')&&!/\.(mp4|mov|webm|m4v|mkv)$/i.test(f.name)){status('Esse arquivo não parece um vídeo. Tente MP4, MOV ou WEBM.');return}
+  file=f; baseName=f.name.replace(/\.[^.]+$/,'').replace(/[^\w\-]+/g,'_')||'video';
+  if(vid.src) URL.revokeObjectURL(vid.src);
+  vid.src=URL.createObjectURL(f); vid.hidden=false; $('viewerEmpty').hidden=true;
+  status('Carregando vídeo…');
+}
+vid.addEventListener('loadedmetadata',()=>{
+  $('viewer').style.aspectRatio=`${vid.videoWidth}/${vid.videoHeight}`;
+  grid.style.setProperty('--ar',`${vid.videoWidth}/${vid.videoHeight}`);
+  const mb=(file.size/1048576).toFixed(1);
+  $('meta').hidden=false;
+  $('meta').innerHTML=`<span><b>${file.name.replace(/[<>&]/g,'')}</b></span><span>${vid.videoWidth} × ${vid.videoHeight} px · ${tc(vid.duration)} · ${mb} MB</span>`;
+  $('seek').disabled=false; $('grab').disabled=false; $('go').disabled=false;
+  status('Vídeo pronto. Ajuste as opções e clique em Extrair frames.');
+  guessFps(); updateHint();
+});
+vid.addEventListener('error',()=>status('O navegador não conseguiu abrir esse vídeo. Converta para MP4 (H.264) e tente de novo.'));
+vid.addEventListener('timeupdate',()=>{ if(!busy){ $('tc').textContent=tc(vid.currentTime); if(vid.duration) $('seek').value=Math.round(vid.currentTime/vid.duration*1000);} });
+
+function guessFps(){
+  if(!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) return;
+  let last=null, diffs=[];
+  const was=vid.currentTime;
+  vid.muted=true;
+  const cb=(now,m)=>{ if(last!==null){const d=m.mediaTime-last; if(d>0.001) diffs.push(d)} last=m.mediaTime;
+    if(diffs.length<12) vid.requestVideoFrameCallback(cb);
+    else { vid.pause(); diffs.sort((a,b)=>a-b); const med=diffs[6]; fpsGuess=Math.min(120,Math.max(1,Math.round(1/med))); vid.currentTime=was; updateHint();
+      $('meta').insertAdjacentHTML('beforeend',`<span>≈ ${fpsGuess} fps</span>`);} };
+  vid.requestVideoFrameCallback(cb);
+  vid.play().catch(()=>{});
+}
+
+$('file').addEventListener('change',e=>load(e.target.files[0]));
+const drop=$('drop');
+drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}});
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||e.target===drop)drop.classList.remove('over')}));
+document.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0]; if(f) load(f)});
+
+/* ---------- opções ---------- */
+function seg(id,cb){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset.v)})}
+seg('mode',v=>{mode=v;
+  if(v==='interval'){$('val').value=1;$('val').step=0.1;$('val').min=0.04;$('valUnit').textContent='segundos'}
+  if(v==='count'){$('val').value=20;$('val').step=1;$('val').min=1;$('valUnit').textContent='frames'}
+  $('valRow').hidden=v==='all'; updateHint()});
+seg('fmt',v=>{fmt=v;$('qBox').hidden=v==='png'});
+$('val').addEventListener('input',updateHint);
+$('q').addEventListener('input',()=>$('qOut').textContent=$('q').value+'%');
+
+function plan(){
+  const d=vid.duration||0; if(!d) return [];
+  const v=parseFloat($('val').value);
+  let times=[];
+  if(mode==='interval'){const step=Math.max(0.04,v||1); for(let t=0;t<d-0.001;t+=step) times.push(t)}
+  else if(mode==='count'){const n=Math.max(1,Math.round(v||1)); for(let i=0;i<n;i++) times.push(n===1?0:i*(d-0.05)/(n-1))}
+  else {const step=1/fpsGuess; for(let t=0;t<d-0.001;t+=step) times.push(t)}
+  return times.map(t=>Math.min(t+0.001,Math.max(0,d-0.04)));
+}
+function updateHint(){
+  const n=plan().length, v=$('val').value;
+  const txt= mode==='interval'?`Um frame a cada ${v} s`: mode==='count'?`${v} frames espalhados igualmente pelo vídeo`:`Todos os frames (≈ ${fpsGuess} por segundo)`;
+  $('modeHint').textContent= n?`${txt} → ${n} imagens.`+(n>600?' É bastante: pode demorar e pesar.':''):txt+'.';
+}
+
+/* ---------- captura ---------- */
+function seekTo(t){return new Promise(res=>{
+  const done=()=>{vid.removeEventListener('seeked',done);
+    if('requestVideoFrameCallback' in vid) { let fired=false; vid.requestVideoFrameCallback(()=>{fired=true;res()}); setTimeout(()=>{if(!fired)res()},120);} else requestAnimationFrame(()=>requestAnimationFrame(res));};
+  vid.addEventListener('seeked',done); vid.currentTime=t;})}
+
+const canvas=document.createElement('canvas');
+async function capture(t){
+  canvas.width=vid.videoWidth; canvas.height=vid.videoHeight;
+  const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(vid,0,0,canvas.width,canvas.height);
+  const type=fmt==='png'?'image/png':'image/jpeg';
+  const blob=await new Promise(r=>canvas.toBlob(r,type,fmt==='png'?undefined:$('q').value/100));
+  const f={t,blob,ext:fmt,url:URL.createObjectURL(blob),sel:false};
+  frames.push(f); addThumb(f,frames.length); return f;
+}
+function addThumb(f,i){
+  $('sheetEmpty').hidden=true;
+  const b=document.createElement('button'); b.className='frame'; b.type='button'; b.setAttribute('aria-pressed','false');
+  b.title='Clique para marcar · dois cliques para baixar só este';
+  b.innerHTML=`<img alt="Frame em ${tc(f.t)}" loading="lazy"><span class="t">${tc(f.t)}</span><span class="n">${pad(i,3)}</span>`;
+  b.querySelector('img').src=f.url;
+  b.addEventListener('click',()=>{f.sel=!f.sel;b.setAttribute('aria-pressed',f.sel);refresh()});
+  b.addEventListener('dblclick',()=>saveOne(f,i));
+  f.el=b; grid.appendChild(b); refresh();
+}
+function refresh(){
+  const s=frames.filter(f=>f.sel).length;
+  $('count').textContent=frames.length?`· ${frames.length} frames${s?` · ${s} marcados`:''}`:'';
+  $('zipAll').disabled=!frames.length||busy; $('zipSel').disabled=!s||busy;
+  $('sheetEmpty').hidden=!!frames.length;
+}
+
+$('go').addEventListener('click',async()=>{
+  const times=plan(); if(!times.length) return;
+  busy=true; cancel=false; vid.pause();
+  $('go').disabled=true; $('stop').hidden=false; refresh();
+  const t0=performance.now();
+  for(let i=0;i<times.length;i++){
+    if(cancel) break;
+    await seekTo(times[i]); await capture(times[i]);
+    $('bar').style.width=((i+1)/times.length*100)+'%';
+    $('tc').textContent=tc(times[i]); $('seek').value=Math.round(times[i]/vid.duration*1000);
+    status(`Extraindo ${i+1} de ${times.length}…`);
+  }
+  busy=false; $('go').disabled=false; $('stop').hidden=true; refresh();
+  status(cancel?`Parado. ${frames.length} frames na folha.`:`Pronto: ${times.length} frames em ${((performance.now()-t0)/1000).toFixed(1)} s, ${vid.videoWidth}×${vid.videoHeight}px.`);
+});
+$('stop').addEventListener('click',()=>cancel=true);
+
+$('seek').addEventListener('input',e=>{ if(vid.duration){vid.pause(); vid.currentTime=e.target.value/1000*vid.duration; $('tc').textContent=tc(vid.currentTime)} });
+$('grab').addEventListener('click',async()=>{vid.pause(); await seekTo(vid.currentTime); await capture(vid.currentTime); status(`Frame em ${tc(vid.currentTime)} capturado.`)});
+
+$('selAll').addEventListener('click',()=>{frames.forEach(f=>{f.sel=true;f.el.setAttribute('aria-pressed','true')});refresh()});
+$('selNone').addEventListener('click',()=>{frames.forEach(f=>{f.sel=false;f.el.setAttribute('aria-pressed','false')});refresh()});
+$('clear').addEventListener('click',()=>{ if(busy) return; frames.forEach(f=>URL.revokeObjectURL(f.url)); frames=[]; grid.innerHTML=''; $('bar').style.width='0'; refresh(); status('Folha limpa.')});
+
+/* ---------- download ---------- */
+function nameFor(f,i){return `${baseName}_${pad(i,4)}_${tcFile(f.t)}.${f.ext}`}
+function explain(err){
+  const c=err?.code;
+  if(c==='declined') return 'Download cancelado.';
+  if(c==='too_large') return 'Arquivo grande demais para baixar de uma vez. Selecione menos frames e baixe em partes.';
+  if(c==='rate_limited') return 'Já tem um download esperando confirmação. Confirme ou feche e tente de novo.';
+  return 'Não deu para baixar nesta visualização. Abra o app pelo claude.ai no navegador.';
+}
+async function saveOne(f,i){
+  const d=await dl(); if(!d){openBox(f,i);return}
+  try{await d.save({filename:nameFor(f,i),data:f.blob}); status('Frame salvo.')}catch(e){ if(e?.code==='declined'||e?.code==='rate_limited') status(explain(e)); else openBox(f,i);}
+}
+async function saveZip(list,label){
+  const d=await dl(); if(!d){status('Baixar em .zip não funciona por este link. Dê dois cliques num frame para salvar um por um, ou use o arquivo Frame-a-Frame.html no computador para baixar todos.');return}
+  if(!window.JSZip){status('Não carregou o compactador. Recarregue a página.');return}
+  busy=true; refresh();
+  const zip=new JSZip();
+  list.forEach(({f,i})=>zip.file(nameFor(f,i),f.blob));
+  status('Montando o .zip…');
+  const blob=await zip.generateAsync({type:'blob',compression:'STORE'},m=>$('bar').style.width=m.percent+'%');
+  busy=false; refresh();
+  status('Confirme o download na janela que abriu.');
+  try{await d.save({filename:`${baseName}_${label}_${list.length}frames.zip`,data:blob}); status(`${list.length} frames salvos no .zip.`)}catch(e){status(explain(e))}
+}
+$('zipAll').addEventListener('click',()=>saveZip(frames.map((f,k)=>({f,i:k+1})),'todos'));
+$('zipSel').addEventListener('click',()=>saveZip(frames.map((f,k)=>({f,i:k+1})).filter(x=>x.f.sel),'selecionados'));
+
+const box=document.createElement('div');
+box.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.88);display:grid;grid-template-rows:auto 1fr;gap:12px;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))';
+box.hidden=true;
+box.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;color:#fff;font:500 14px var(--f-body)"><span id="boxTxt"></span><button type="button" id="boxX" style="font:600 14px var(--f-body);background:#fff;color:#111;border:0;border-radius:6px;padding:8px 14px;cursor:pointer">Fechar</button></div><img id="boxImg" alt="Frame em tamanho original" style="max-width:100%;max-height:100%;margin:auto;object-fit:contain">';
+document.body.appendChild(box);
+function openBox(f,i){ $('boxImg').src=f.url; $('boxTxt').textContent=`${nameFor(f,i)} · ${vid.videoWidth}×${vid.videoHeight}px · Clique com o botão direito > Salvar imagem como (no celular, segure o dedo na imagem).`; box.hidden=false; }
+box.addEventListener('click',e=>{ if(e.target.id!=='boxImg') box.hidden=true; });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') box.hidden=true; });
+dl().then(d=>{ if(!d){ $('dlNote').textContent='Por este link o .zip não funciona. Dê dois cliques num frame para abrir em tamanho original e salvar com o botão direito > Salvar imagem como. Para baixar todos de uma vez, use o arquivo Frame-a-Frame.html no computador.'; } });
+refresh();
+</script>
+</body></html>
