@@ -99,6 +99,9 @@ input[type=range]{width:100%;accent-color:var(--ink);height:20px}
 .preview{padding:10px;gap:10px}
 .screen{position:relative;border-radius:20px;overflow:hidden;background:var(--stage);aspect-ratio:16/9;max-width:100%;display:grid;place-items:center}
 .screen video{width:100%;height:100%;object-fit:contain;display:block}
+.screen.portrait{height:min(58vh,520px);width:auto;justify-self:center}
+.screen.tall{max-height:min(58vh,520px);width:100%}
+.grid.portrait{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
 .screen .empty{color:#9a9aa0;text-align:center;display:grid;gap:6px;padding:24px;cursor:pointer}
 .screen .empty strong{color:#f1f1ef;font-weight:500;font-size:18px;letter-spacing:-.01em}
 .screen.over{outline:2px solid #ffffff;outline-offset:-4px}
@@ -310,6 +313,8 @@ function load(f){
 vid.addEventListener('loadedmetadata',()=>{
   const ar=`${vid.videoWidth}/${vid.videoHeight}`;
   $('screen').style.aspectRatio=ar; grid.style.setProperty('--ar',ar);
+  const portrait=vid.videoHeight>vid.videoWidth;
+  $('screen').classList.toggle('portrait',portrait); grid.classList.toggle('portrait',portrait);
   $('drop').hidden=true; $('fileInfo').hidden=false; $('swap').hidden=false;
   $('fname').textContent=file.name;
   renderChips();
