@@ -29,8 +29,7 @@ button{font:inherit;color:inherit}
 /* topo */
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:-.03em}
-.mark{width:30px;height:30px;border-radius:50%;background:var(--accent);border:1px solid var(--ink);display:grid;place-items:center}
-.mark i{width:11px;height:11px;border:1.5px solid var(--accent-ink);border-radius:3px;display:block}
+.mark{width:30px;height:30px;border-radius:50%;background:var(--card);border:1px solid var(--ink);display:grid;place-items:center;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:16px;line-height:1}
 .tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);background:var(--card);border:1px solid var(--ink);padding:7px 12px;border-radius:999px}
 .tag svg{flex:none}
 
@@ -165,7 +164,7 @@ input[type=range]{width:100%;accent-color:var(--ink);height:20px}
 
 <div class="app">
   <header class="top">
-    <div class="brand"><span class="mark"><i></i></span>Frame a Frame <span class="by">por <a href="https://www.instagram.com/brucristina.design/" target="_blank" rel="noopener">Bruna Cristina</a></span></div>
+    <div class="brand"><span class="mark" aria-hidden="true">⭐️</span>Frame a Frame <span class="by">por <a href="https://www.instagram.com/brucristina.design/" target="_blank" rel="noopener">Bruna Cristina</a></span></div>
     <span class="tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Processado no seu navegador · o vídeo não sai do seu computador</span>
   </header>
 
